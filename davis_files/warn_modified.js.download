@@ -1,0 +1,35 @@
+/*
+   Code to warn user if page is modified and he clicks a link without saving.
+   Requires: ajax.js, prototype.js
+*/
+var form_modified;
+
+/*
+   short for "mark", i.e. mark changes for later checking
+*/
+function m() {form_modified = 'Y'; }
+
+/*
+   short for "continue", i.e. should we continue through the link; if the form
+   is unmodified, then we'll always return true, which makes it continue. Use it
+   like this:
+    <a href="..." onClick="if(!c()) return false; rest_of_stuff_here();" >
+   or simply,
+    <a href="..." onClick="c()" >
+*/
+function c() {
+  var maximus_applet = document.maximus_applet;
+  if (maximus_applet != null && maximus_applet.allowPageExit) {
+    return maximus_applet.allowPageExit();
+  } else if (form_modified == 'Y' || (maximus_applet != null && maximus_applet.isModified())) {
+	  var warningMessage = "";
+	  if(typeof getMessage == "undefined")
+		  warningMessage = "You are about to leave a page that contains unsaved data.  Would you like to save your changes first? Click OK to continue without saving, or Cancel to stay on the current page.";
+	  else
+		  warningMessage = getMessage("warning_leave_modified_page");
+    var confirmContinue = confirm(warningMessage);
+    return confirmContinue;
+  } else {
+    return true;
+  }
+}

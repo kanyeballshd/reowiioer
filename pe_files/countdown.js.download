@@ -1,0 +1,119 @@
+/*
+   Author:     Robert Hashemian (http://www.hashemian.com/)
+   Modified by:   Munsifali Rashid (http://www.munit.co.uk/)
+*/
+
+var countdownTimeout;
+
+function countdown(obj)
+{
+   this.obj    = obj;
+   this.Div    = "clock";
+   this.BackColor    = "white";
+   this.ForeColor    = "black";
+   this.TargetDate      = "12/31/2020 5:00 AM";
+   this.NumSecs = 10000;
+   this.DisplayFormatH   = "%%H%%:%%M%%:%%S%%";
+   this.DisplayFormatM   = "%%M%%:%%S%%";
+   this.DisplayFormatS   = "%%S%%";
+   this.DisplayFormat    = this.DisplayFormatS;
+   this.doReset = false;
+   
+   this.DisplayStr;
+
+   this.Calcage      = cd_Calcage;
+   this.CountBack    = cd_CountBack;
+   this.Setup     = cd_Setup;
+   this.Alert     = cd_Alert;
+   this.reset = cd_reset;
+}
+
+function cd_reset () {
+  this.doReset = true;
+}
+
+function cd_Calcage(secs, num1, num2)
+{
+  s = ((Math.floor(secs/num1))%num2).toString();
+  if (s.length < 2) s = "0" + s;
+  return (s);
+}
+function cd_CountBack(secs)
+{
+  // See if we need to reset the clock
+  if (this.doReset) {
+    secs = this.NumSecs;
+    clearTimeout(countdownTimeout);
+    countdownTimeout = setTimeout(this.obj +".Alert()", this.NumSecs * 1000);
+    this.doReset = false;
+  }
+  //this.DisplayStr = formatString.replace(/%%D%%/g, this.Calcage(secs,86400,100000));
+  this.DisplayStr = this.DisplayFormat.replace(/%%H%%/g,    this.Calcage(secs,3600,24));
+  this.DisplayStr = this.DisplayStr.replace(/%%M%%/g,    this.Calcage(secs,60,60));
+  this.DisplayStr = this.DisplayStr.replace(/%%S%%/g,    this.Calcage(secs,1,60));
+
+  if(document.getElementById(this.Div) != null)
+  {
+  	  document.getElementById(this.Div).innerHTML = this.DisplayStr;
+  	  setTimeout(this.obj +".CountBack(" + (secs > 0 ? (secs-1) : 0) + ")", 990);
+  }
+
+}
+function cd_Alert()
+{
+	this.DisplayStr = this.DisplayFormat.replace(/%%H%%/g,    this.Calcage(0,3600,24));
+    this.DisplayStr = this.DisplayStr.replace(/%%M%%/g,    this.Calcage(0,60,60));
+    this.DisplayStr = this.DisplayStr.replace(/%%S%%/g,    this.Calcage(0,1,60));
+	confirm("You are about to auto logout!!,\n Please save your work, or visit another page if you do not want to logout now.");
+}
+function cd_Setup()
+{
+   //alert("Setup was called");
+  
+  if(this.NumSecs >= 60)
+  this.DisplayFormat = this.DisplayFormatM;
+  if(this.NumSecs >= 3600)
+  this.DisplayFormat = this.DisplayFormatH;
+  if(document.getElementById(this.Div) != null)
+  {
+	countdownTimeout = setTimeout(this.obj +".Alert()", this.NumSecs * 1000);
+  	this.CountBack(this.NumSecs);
+  }
+}
+var cd1 = new countdown('cd1');
+function Start(numSecs,div)
+{
+   cd1.Div        = div;
+   cd1.NumSecs = numSecs-45;
+   cd1.Setup();
+}
+function addField(buttonElement, field, value) {
+   if(buttonElement.form[field])
+   {
+      if(buttonElement.form[field].value)
+      {
+         buttonElement.form[field].value = buttonElement.form[field].value+","+value;
+      }
+      else
+      {
+         buttonElement.form[field].value = value;
+      }
+   }
+   else
+   {
+      var newfield = document.createElement("input");
+      newfield.setAttribute("type", "hidden");
+      newfield.setAttribute("name", field);
+      newfield.setAttribute("value", value);
+      buttonElement.form.appendChild(newfield);
+   }
+}
+
+/**
+ * Reset the page's countdown timer, if there is one.
+ */
+function ResetCountdownTimer () {
+		if (cd1) {
+			cd1.reset ();
+		}
+}

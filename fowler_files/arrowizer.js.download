@@ -1,0 +1,75 @@
+function arrowize (e) {
+
+let currentPos= e.target.parentElement.getAttribute("data-row_column")
+let coordinates =  currentPos.split("_");
+let column = Number(coordinates[1]);
+let row = Number(coordinates[0]);
+const maxColumn = Number(document.querySelectorAll('td[data-row_column]').item(document.querySelectorAll('td[data-row_column]').length-1).getAttribute("data-row_column").split("_")[1]);
+const maxRow = Number(document.querySelectorAll('td[data-row_column]').item(document.querySelectorAll('td[data-row_column]').length-1).getAttribute("data-row_column").split("_")[0]);
+let isShift = !!window.event.shiftKey;
+
+      /*  if (e.which == 39 && !isShift) { // right arrow        
+         while (column < maxColumn){
+            const input = getNextTextField(row, column+1);
+            if(input != null){               
+               input.select();
+               event.preventDefault();
+               break;
+            }
+            else{
+              column++;
+            }
+         }
+ 
+        } else if (e.which == 37 && !isShift) { // left arrow          
+          while (column > 0){
+            const input = getNextTextField(row, column-1);
+            if(input != null){               
+               input.select();
+               event.preventDefault();
+               break;
+            }
+            else{
+              column--;
+            }
+         }
+         
+	
+ 
+        } else
+        	
+        */	if (e.which == 40 && !isShift) { // down arrow         
+         while (row < maxRow){
+            const input = getNextTextField(row + 1, column);
+            if(input != null){
+               input.focus();
+               input.select();
+               event.preventDefault();
+               break;
+            }
+            else{
+              row++;
+            }
+         }
+	
+        } else if (e.which == 38 && !isShift) { // up arrow          
+          while (row > 0){
+            const input = getNextTextField(row -1 , column);
+            if(input != null){      
+               input.focus();
+               input.select();
+               event.preventDefault();
+               break;
+            }
+            else{
+              row--;
+            }
+         }	
+        }
+      }
+
+
+
+function getNextTextField(nextRow, nextColumn){
+  return document.querySelector('[data-row_column="'+ nextRow + '_' + nextColumn + '"]').querySelector('input')
+}

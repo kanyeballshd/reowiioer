@@ -1,0 +1,94 @@
+/* 
+$Id: style.css,v 1.1 2004/06/14 10:32:02 mgoshorn Exp $
+Portal stylesheets are only used to overwrite deployment classes
+or add portal specific classes. If a class is in more than one portal,
+it should be moved to the deployment level. */ 
+
+.SBGstandard {
+	display: inline-table;
+	width: 270px;
+	height: 45px;
+	background-color: #fff;
+	padding: 2px;
+	border-spacing: 5px;
+	margin: 5px;
+	font-size: small;
+	border-style: solid;
+	border-width: thin;
+	border-radius: 10px;
+}
+
+.SBGscore {
+	display: inline-table;
+	width: 30%;
+	border-bottom: 1px solid;
+	border-radius: 10px;
+	text-align: center;
+	font-size: smaller;
+}
+
+.SBGexempt {
+	
+}
+
+.SBGtitle {
+	background-color: #E7F0FF;
+	border-radius: 5px;
+}
+
+.SBGelement {
+	display: inline-table;
+	width: 65%;
+	border-bottom: 1px solid;
+}
+
+.SBGred {
+	background-color: #ffc3c3;
+}
+
+.SBGyellow {
+	background-color: #fff6ac;
+}
+
+.SBGgreen {
+	background-color: #b1ecb1;
+}
+
+.SBGgrey {
+	background-color: #ddd;
+}
+
+.SBGnull {
+	background-color: #f0f0f0;
+}
+
+
+.tooltip {
+	position: relative;
+	display: inline-block;
+	border-bottom: 1px dotted black;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+	visibility: hidden;
+	width: 120px;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	padding: 5px 0;
+	border-radius: 6px;
+	position: absolute;
+	z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+	visibility: visible;
+}
+.AssignmentTitle{
+	font-size: 130%;
+	font-weight: bold;
+}
+.AssignmentInfoBox{
+	width: 300px;
+}

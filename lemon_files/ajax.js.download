@@ -1,0 +1,379 @@
+/*
+   Common ajax functions.
+     Requires: prototype.js
+*/
+
+/**
+ * Get a property from the session. Note that you can't just get any property, but only
+ * ones that you have saved from your javascript using the setProperty function.
+ * @param name the name of the property to get
+ */
+function getProperty(name) {
+  var ret;
+  var req = new Ajax.Request ("smax/sessionAccess/get/"+name, {
+    asynchronous: false,
+    parameters: {sp: getSessionPartition()},
+    onSuccess: function (resp) {
+      ret = resp.responseText;
+    }});
+  return ret;
+}
+
+/**
+* Set a property on the session. Properties that you set here are easily accessible from
+* the client side using the getProperty function. They are technically accessible from the
+* server side java code as well, but it's not that easy to access them directly. Rather,
+* you should call the SessionAccessAjaxHandler.setProperty and getProperty methods.
+* @param name the name of the property to set
+* @param value the value to set
+*/
+function setProperty(name, value) {
+  var req = new Ajax.Request ("smax/sessionAccess/set/"+name, {
+    parameters: {sp: getSessionPartition(), value: value}
+    });
+}
+
+/**
+ * Just ping the server. Can be used to make sure that the session stays alive.
+ * @return
+ */
+function ping() {
+  var req = new Ajax.Request ("smax/sessionAccess/ping", {
+    parameters: {}
+    });
+}
+
+var messages = $H();
+
+/**
+ * Get a message from the message registry. You can pass parameters: for example,
+ * if you call:
+ * <PRE>
+ * getMessage('my_message_key', {foo: 'param #1', bar: 'param #2'});
+ * </PRE>
+ * the parameters are substituted in the message using the normal "param" calculator function, for example:
+ * <PRE>
+ * <message key="my_message_key"><value><![CDATA[Test Message, params are ${param.foo}${notnull.${param.bar}. and ${param.bar}}.]]></value></message>
+ * </PRE>
+ * @param key the message key to look up
+ * @param params an optional map of parameters to substitute in the message
+ * @return the text of the message to display to the user
+ */
+function getMessage(key, params) {
+  var ret;
+  if (messages.keys().include(key)) {
+	  ret = messages.get(key);
+  } else {
+	  var req = new Ajax.Request ("smax/messageService/getMessage/"+key, {
+	    asynchronous: false,
+	    parameters: {sp: getSessionPartition()},
+	    onSuccess: function (resp) {
+	      ret = resp.responseText;
+	    }});
+	  if (!params) messages.set(key, ret);
+  }
+  if (ret == null) return ret;
+
+  if (ret && typeof(ret) == 'string' && ret.include("#{")) {
+		var myTemplate = new Template(ret);
+		ret = myTemplate.evaluate(params);
+  }
+  return ret;
+}
+
+function getMessages(keylist) {
+  var keyEnumable = $A(keylist);
+
+  // See if we need any of the messages requested
+  var needMessage = false;
+  var keys = messages.keys();
+  keyEnumable.each (function (key) {
+	 if (!keys.include(key)) {
+		 needMessage = true;
+		 throw $break;
+	 }
+  });
+  if (needMessage) {
+	  var req = new Ajax.Request ("smax/messageService/getMessages.json", {
+	    asynchronous: false,
+	    parameters: {sp: getSessionPartition(), key: keylist},
+	    onSuccess: function (resp) {
+	      var json = resp.responseJSON;
+	      $H(json).each (function (entry) {
+	    	  messages.set(entry[0], entry[1]);
+	      });
+	    }});
+  }
+}
+
+var portal;
+var webAppName;
+function getImageRoot() {
+  if (!portal) {
+    portal = getUserContextInfo ("portal");
+  }
+  if (!webAppName) {
+    webAppName = getUserContextInfo ("webAppName");
+  }
+  return webAppName+'/schoolmax/resources/schoolmax/'+portal+'/images';
+}
+
+function buildUrl(originalURL, newKeys, newParams, newPage) {
+	// Start with default set of parameters
+	var params = $H({sp: getSessionPartition(), url: originalURL});
+	
+	// Add in any additions
+	if (newKeys) {
+		$H(newKeys).each (function (entry) {
+			params.set("key."+entry.key, entry.value);
+		});
+	}
+	if (newParams) {
+		$H(newParams).each (function (entry) {
+			params.set("param."+entry.key, entry.value);
+		});
+	}
+	if (newPage) {
+		params.set("page", newPage);
+	}
+
+	// Call the application to get the modified URL
+	var ret;
+	var req = new Ajax.Request ("smax/buildUrl", {
+	    asynchronous: false,
+	    parameters: params.toObject(),
+	    onSuccess: function (resp) {
+	      ret = resp.responseJSON;
+	    }});
+	return ret;
+}
+
+function imageURL(name) {
+  if (!name) name = "pix.gif";
+  if (name.indexOf('.') < 0) {
+    name += '.gif';
+  }
+  if (name.charAt(0) != '/') name = '/' + name;
+  return getImageRoot() + name;
+}
+
+function getUserContextInfo(type) {
+  var ret;
+  var req = new Ajax.Request ("smax/getUserContextInfo/"+type, {
+    asynchronous: false,
+    parameters: {sp: getSessionPartition()},
+    onSuccess: function (resp) {
+      ret = resp.responseJSON;
+    }});
+  return ret;
+}
+
+/**
+ * Helpful utility method to marshall a simple Hash into a string
+ * to save on the session.
+ * @param items Hash of items
+ * @param includeValues if true, make values be key=value; otherwise, just key
+ * @return String form of Hash in comma-separated format
+ */
+function hashToString (items, includeValues) {
+  // Now convert this checked items hash into a string and save it on
+  // the session.
+  var marshalled = null;
+  items.each (function (k) {
+    if (marshalled) marshalled += ",";
+    else marshalled = "";
+    marshalled += k.key;
+    if (includeValues) marshalled += "="+k.value;
+  });
+  return marshalled;
+}
+
+/**
+ * Helpful utility method to convert a string into a simple Hash.
+ * @param marshalled the marshalled string value
+ * @param includeValues if true, assume values are key=value; otherwise, just keys and true
+ *   will be used for the values
+ * @return Hash form of the parameter string (expected to be in simple comma-separated key=value format)
+ */
+function stringToHash (marshalled, includeValues) {
+  var ret = $H();
+  if (marshalled) {
+    var splitItems = marshalled.split(",");
+    splitItems.each(function (item) {
+      if (includeValues) {
+      	  var eqpos = item.indexOf("=");
+      	  if (eqpos > 0) {
+      	  	var name = item.substr(0,eqpos);
+      	  	var value = item.substr(eqpos+1);
+      	  	if (value == "true") value = true;
+      	  	else if (value == "false") value = false;
+		    ret.set (name, value);
+      	  } else {
+		    ret.set (item, true);
+      	  }
+      } else {
+	      ret.set (item, true);
+      }
+    });
+  }
+  return ret;
+}
+
+
+document.observe ("dom:loaded", function () {
+	// Set up auto-feedback in the official web 2.0 way
+	Ajax.Responders.register ({
+	  onCreate: function() {
+	    var ajax_feedback = $('ajax_feedback');
+	    if (ajax_feedback) {
+		    ajax_feedback.show();
+		}
+		
+		// Also, reset the clock display on every ajax access since the session will be
+		// refreshed by them automatically.
+		if (cd1) {
+			cd1.reset ();
+		}
+	  },
+	  onComplete: function() {
+	    if (0 == Ajax.activeRequestCount) {
+		    var ajax_feedback = $('ajax_feedback');
+		    if (ajax_feedback) {
+		    	ajax_feedback.hide();
+		    }
+	    }
+	  }
+	});
+});
+
+// Keep track of one tracker. Nice if the page only has one.
+var lastTracker;
+
+function rememberOpenClose (type, componentId, isOpen) {
+	lastTracker.rememberOpenClose (type, componentId, isOpen);
+}
+
+function f_rememberOpenClose (type, componentId, isOpen) {
+	this.openedComponents.set (type+componentId, isOpen);
+	setProperty (this.sessionName, hashToString(this.openedComponents, true));
+}
+
+function isOpen (type, componentId) {
+	return lastTracker.isOpen (type, componentId);
+}
+
+function f_isOpen (type, componentId) {
+	return this.openedComponents.get(type+componentId);
+}
+
+function openCloseTracker (sessionName) {
+	this.openedComponents = stringToHash(getProperty (sessionName), true);
+	if (!this.openedComponents) this.openedComponents = $H();
+	this.sessionName = sessionName;
+	this.rememberOpenClose = f_rememberOpenClose;
+	this.isOpen = f_isOpen;
+}
+
+function initializeOpenClose (sessionName) {
+	lastTracker = new openCloseTracker (sessionName);
+}
+
+/**
+ * Get the source element for the event object passed in. Done because firefox and IE can't agree.
+ * @param event
+ * @return the source element
+ */
+function getSourceElement(event) { 
+    if (document.all) {
+        return event.srcElement; 
+    } else {
+        return event.target; 
+    } 
+}
+
+function isPrintable () {
+	return printable || false;
+}
+
+String.prototype.trim = function() {
+	  return this.replace(/^\s+|\s+$/g, "");
+}
+
+function buildPicklist (name, codes, value, includePleaseSelect, isMultiSelect, height) {
+	// Get any required messages
+	var keyList = codes.pluck ('messageKey');
+	keyList[keyList.size] = 'title.picklist.please_select';
+	getMessages (keyList);
+	
+	var str = "<select ";
+	var values = null;
+	if (isMultiSelect) {
+		str += "multiple ";
+		if (!height) height = 4;
+		str += "size='"+height+"' ";
+		if (value && typeof value == 'string') values = $A(value.split(",")).invoke ('trim');
+	}
+	
+	str += "name='"+name+"' id='"+name+"'>";
+
+	if (includePleaseSelect) {
+		str += "<option value=''>"+getMessage("title.picklist.please_select")+"</option>";
+	}
+	if (codes) codes.each (function (c) {
+		str += "<option value='"+c.value+"'";
+		if (value && typeof value == 'function') {
+			if (value (c)) str += " SELECTED";
+		} else {
+			if (isMultiSelect && values && values.include(c.value)) {
+				str += " SELECTED";
+			} else if (!isMultiSelect && value && c.value == value) {
+				str += " SELECTED";
+			}
+		}
+		
+		// Get the text name
+		var text = getEnumText(c);
+		
+		str += ">"+text+"</option>";
+	});
+	str += "</select>";
+	
+	return str;
+}
+
+function getEnumText (c) {
+	var text = null;
+	if (c.messageKey) {
+		var tt = getMessage (c.messageKey);
+		if (typeof(tt) == 'string') {
+			text = tt;
+		}
+	}
+	if (!text) text = c.reportLabel;
+	if (!text) text = c.name;
+	
+	return text;
+}
+
+function getDisplayValue (codes, value) {
+	if (!value) return "";
+	
+	// Get any required messages
+	var keyList = codes.pluck ('messageKey');
+	getMessages (keyList);
+	
+	var str = "";
+	var values = $A(value.split(",")).invoke ('trim');
+	
+	if (codes) codes.each (function (c) {
+		if (values && values.include(c.value)) {
+			// Get the text name
+			var text = getEnumText(c);
+			if (str != "") str += ", ";
+			str += text;
+		}
+	});
+	
+	return str;
+}
+	

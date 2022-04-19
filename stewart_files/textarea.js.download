@@ -1,0 +1,14 @@
+function textAreaMaxLength(textBox, maxLength)
+{	
+	if ( textBox.value.length > maxLength )
+
+   {
+
+       textBox.value = textBox.value.substr(0,maxLength);
+
+       return false;
+
+   }
+
+   return true;
+}

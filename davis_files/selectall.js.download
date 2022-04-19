@@ -1,0 +1,122 @@
+//Copyright 2005 MAXIMUS Inc
+
+function checkUncheckAll(fieldNamePrefix)
+{
+	var aFormWidgets;
+	var isChecked;
+	var sFieldPrefix = fieldNamePrefix;
+	var nFieldPrefixLength = sFieldPrefix.length;
+	//The page may have more than one form so loop through the forms
+	for (var f=0; f<document.forms.length; f++)
+	{
+		aFormWidgets=document.forms[f];
+		for (var i=0; i<aFormWidgets.length; i++)
+		{
+			var sWidgetName=aFormWidgets[i].name;
+			if (aFormWidgets[i].type == 'checkbox')
+			{
+				if (sWidgetName == sFieldPrefix+"checkall")
+				{
+					index=i;
+					isChecked = aFormWidgets[i].checked
+				}
+				else if (sWidgetName.substr(0,nFieldPrefixLength) == sFieldPrefix)
+				{
+					aFormWidgets[i].checked = isChecked;
+				}
+			}//end if type is checkbox
+		}//end for each element
+	}//end for each form
+}
+
+function checkUncheckAllUpdateSelectedCount(fieldNamePrefix) {
+	var aFormWidgets;
+	var isChecked;
+	var sFieldPrefix = fieldNamePrefix;
+	var nFieldPrefixLength = sFieldPrefix.length;
+	//The page may have more than one form so loop through the forms
+	for (var f=0; f<document.forms.length; f++)
+	{
+		aFormWidgets=document.forms[f];
+		for (var i=0; i<aFormWidgets.length; i++)
+		{
+			var sWidgetName=aFormWidgets[i].name;
+			if (aFormWidgets[i].type == 'checkbox')
+			{
+				if (sWidgetName == sFieldPrefix+"checkall")
+				{
+					index=i;
+					isChecked = aFormWidgets[i].checked
+				}
+				else if (sWidgetName.substr(0,nFieldPrefixLength) == sFieldPrefix)
+				{
+					if (aFormWidgets[i].checked && !isChecked) {
+						aFormWidgets[i].checked = isChecked;
+						updateSelectedCount(isChecked);
+					} else if (!aFormWidgets[i].checked && isChecked) {
+						aFormWidgets[i].checked = isChecked;
+						updateSelectedCount(isChecked);
+					}
+				}
+			}//end if type is checkbox
+		}//end for each element
+	}//end for each form
+}
+
+function updateSelectedCount(chckd)
+{
+	if (document.getElementById('selected_count')) {
+		var currentvalue = parseInt(document.getElementById('selected_count').innerHTML);
+		if (chckd) {
+			document.getElementById('selected_count').innerHTML = currentvalue + 1;
+		} else {
+			document.getElementById('selected_count').innerHTML = currentvalue - 1;
+		}
+	}
+}
+
+function checkUncheckAllRadio(fieldNamePrefix)
+{
+	var aFormWidgets;
+	var isChecked;
+	var sFieldPrefix = fieldNamePrefix;
+	var nFieldPrefixLength = sFieldPrefix.length;
+	var value;
+	//The page may have more than one form so loop through the forms
+	for (var f=0; f<document.forms.length; f++)
+	{
+		aFormWidgets=document.forms[f];
+		//Loop through the widget to get value selected
+		for (var i=0; i<aFormWidgets.length; i++)
+		{
+			var sWidgetName=aFormWidgets[i].name;
+			if (aFormWidgets[i].type == 'radio')
+			{
+				if (sWidgetName == "field_radio_name")
+				{
+					isChecked = aFormWidgets[i].checked
+
+					if(isChecked)
+					{
+						value = aFormWidgets[i].value;
+						break;
+					}
+				}
+			}//end if type is checkbox
+		}//end for each element
+		for (var i=0; i<aFormWidgets.length; i++)
+		{
+			var sWidgetName=aFormWidgets[i].name;
+			if (aFormWidgets[i].type == 'radio')
+			{
+				if (sWidgetName.substr(0,nFieldPrefixLength) == sFieldPrefix)
+				{
+					if(aFormWidgets[i].value == value)
+					{
+						aFormWidgets[i].checked = isChecked;
+					}
+				}
+			}//end if type is checkbox
+		}//end for each element
+	}//end for each form
+}
